@@ -11,7 +11,22 @@ const progressBar = document.getElementById("progress-bar");
 const seek = document.getElementById("seek");
 const seekTooltip = document.getElementById("seek-tooltip");
 
+// volume controls
+const volumeButton = document.getElementById("volume-button");
+const volumeIcons = document.querySelectorAll(".volume-button use");
+const volumeMute = document.querySelector('use[href="#volume-mute"]');
+const volumeLow = document.querySelector('use[href="#volume-low"]');
+const volumeHigh = document.querySelector('use[href="#volume-high"]');
+const volume = document.getElementById("volume");
+
 const playbackAnimation = document.getElementById("playback-animation");
+
+const fullscreenButton = document.getElementById("fullscreen-button");
+const videoContainer = document.getElementById("video-container");
+
+const fullscreenIcons = fullscreenButton.querySelectorAll("use");
+
+const pipButton = document.getElementById("pip-button");
 
 const videoWorks = !!document.createElement("video").canPlayType;
 if (videoWorks) {
@@ -102,14 +117,6 @@ seek.addEventListener("input", skipAhead);
 
 // may need to clear all values on page reload
 
-// volume controls
-const volumeButton = document.getElementById("volume-button");
-const volumeIcons = document.querySelectorAll(".volume-button use");
-const volumeMute = document.querySelector('use[href="#volume-mute"]');
-const volumeLow = document.querySelector('use[href="#volume-low"]');
-const volumeHigh = document.querySelector('use[href="#volume-high"]');
-const volume = document.getElementById("volume");
-
 function updateVolume() {
   if (video.muted) {
     video.muted = false;
@@ -171,3 +178,61 @@ function animatePlayback() {
 }
 
 video.addEventListener("click", animatePlayback);
+
+function toggleFullScreen() {
+  if (document.fullscreenElement) {
+    document.exitFullscreen();
+  } else if (document.webkitFullscreenElement) {
+    // Need this to support Safari
+    document.webkitExitFullscreen();
+  } else if (videoContainer.webkitRequestFullscreen) {
+    // Need this to support Safari
+    videoContainer.webkitRequestFullscreen();
+  } else {
+    videoContainer.requestFullscreen();
+  }
+}
+
+// fullscreenButton.onclick = toggleFullScreen;
+fullscreenButton.addEventListener("click", toggleFullScreen);
+
+function updateFullscreenButton() {
+  fullscreenIcons.forEach((icon) => icon.classList.toggle("hidden"));
+
+  if (document.fullscreenElement) {
+    fullscreenButton.setAttribute("data-title", "Exit full screen (f)");
+  } else {
+    fullscreenButton.setAttribute("data-title", "Full screen (f)");
+  }
+}
+
+videoContainer.addEventListener("fullscreenchange", updateFullscreenButton);
+
+// document.addEventListener("DOMContentLoaded", () => {
+//   if (!("pictureInPictureEnabled" in document)) {
+//     pipButton.classList.add("hidden");
+//   }
+// });
+
+// togglePip toggles Picture-in-Picture mode on the video
+// doesn't work for firefox
+async function togglePip() {
+  try {
+    if (video !== document.pictureInPictureElement) {
+      pipButton.disabled = true;
+      await video.requestPictureInPicture();
+    } else {
+      await document.exitPictureInPicture();
+    }
+  } catch (error) {
+    console.error(error);
+    pipButton.setAttribute(
+      "data-title",
+      `Not supported in ${navigator.userAgent}`
+    );
+  } finally {
+    pipButton.disabled = false;
+  }
+}
+
+pipButton.addEventListener("click", togglePip);
